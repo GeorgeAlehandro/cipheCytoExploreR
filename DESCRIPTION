@@ -1,12 +1,13 @@
-Package: CytoExploreR
+Package: cipheCytoExploreR
 Type: Package
 Title: Interactive Analysis of Cytometry Data
-Version: 1.1.0
+Version: 0.1.0
 Date: 2021-04-19
 Authors@R: c(
   person("Dillon", "Hammill", role = c("aut", "cre"), email = "Dillon.Hammill@anu.edu.au"),
   person("Greg", "Finak", role = "ctb", email = "gfinak@fredhutch.org"),
-  person("Mike", "Jiang", role = "ctb", email = "wjiang2@fhcrc.org"))
+  person("Mike", "Jiang", role = "ctb", email = "wjiang2@fhcrc.org"),
+  person("George Alehandro", "Saad", role = "ctb", email = "george-alehandro.saad@protonmail.com"))
 Description: An intuitive and interactive approach to analysing cytometry data
   in R. This package has been developed under ROpenSci gudelines to integrate
   conventional and cutting edge cytometry analysis tools under a unified 
