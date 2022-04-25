@@ -31,21 +31,11 @@
 #' @export
 data_editor <- function(x,
                         title = "Data Editor",
-                        type = "editor",
                         options = NULL,
                         save_as = NULL,
                         viewer = TRUE,
                         logo = "CytoExploreR") {
   
-  # SELECTOR OPTIONS
-  if(type == "selector" & is.null(options)){
-    stop("options required to use slector type.")
-  }else if(type == "selector" & !is.null(options)){
-    # EMPTY DEFAULT
-    if(!any(LAPPLY(options, ".empty"))){
-      options <- c(options, "")
-    }
-  }
   
   # PULL DOWN ROW NAMES
   row_names <- rownames(x)
@@ -55,8 +45,7 @@ data_editor <- function(x,
     x <- as.matrix(x)
   }
   
-  # EDITOR DATA
-  if(type == "editor"){
+
     # MOVE COLNAMES INTO MATRIX
     if(is.null(colnames)){
       stop("colnames must be assigned!")
@@ -64,12 +53,7 @@ data_editor <- function(x,
       x <- rbind(colnames(x), x)
     }
   # MENU DATA
-  }else if(type %in% "menu"){
-    x[, ncol(x)] <- rep(NA, nrow(x))
-  # SELECTOR DATA
-  }else if(type == "selector"){
-    x[, ncol(x)] <- rep("", nrow(x))
-  }
+  
   
   # CONVERT TO DATA FRAME
   x <- data.frame(x, stringsAsFactors = FALSE)
@@ -84,116 +68,10 @@ data_editor <- function(x,
   
   # TEMP_FILE
   temp_file <- NULL
-  
-  # DATA EDITOR
-  app <- shinyApp(
-    
-    # USER INTERFACE
-    ui <- fluidPage(
-      theme = bs_theme(version = 3, bootswatch = "yeti"),
-      titlePanel(div(img(src = logo, width = 100), title)),
-      mainPanel(rHandsontableOutput("x")),
-      actionButton("save_and_close", "Save & Close")
-    ),
-    
-    # SERVER
-    server <- function(input, output, session) {
-      
-      # VALUES
-      values <- reactiveValues()
-      
-      # DATA EDITS
-      observe({
-        if (!is.null(input$x)) {
-          values[["x"]] <- hot_to_r(input$x)
-        } else {
-          values[["x"]] <- x
-        }
-        write.csv(values[["x"]],
-                  temp_file,
-                  row.names = FALSE)
-      })
-      
-      # TABLE
-
-      output$x <- renderRHandsontable({
-        # EDITOR
-        if(type == "editor"){
-          suppressWarnings(
-            rhandsontable(values[["x"]],
-                          contextMenu = TRUE,
-                          useTypes = FALSE,
-                          colHeaders = NULL,
-                          rowHeaders = NULL,
-                          readOnly = FALSE,
-                          halign = "htCenter")
-          )
-        # MENU
-        }else if(type == "menu"){
-          suppressWarnings(
-            rhandsontable(values[["x"]],
-                          contextMenu = TRUE,
-                          rowHeaders = NULL) %>%
-            hot_col(colnames(x)[-length(colnames(x))],
-                    halign = "htCenter",
-                    readOnly = TRUE,
-                    useTypes = FALSE) %>%
-            hot_col(col = colnames(x)[length(colnames(x))],
-                    type = "checkbox",
-                    halign = "htCenter",
-                    readOnly = FALSE,
-                    allowInvalid = FALSE) 
-          )
-        # SELECTOR
-        }else if(type == "selector"){
-          # SELECTOR
-          suppressWarnings(
-            rhandsontable(values[["x"]],
-                          contextMenu = TRUE,
-                          rowHeaders = NULL,
-                          manualColumnResize = TRUE) %>%
-            hot_col(col = colnames(x)[length(colnames(x))],
-                    type = "dropdown",
-                    source = options,
-                    halign = "htCenter",
-                    readOnly = FALSE)
-          )
-        }
-
-      })
-
-      # MANUAL CLOSE
-      observeEvent(input$save_and_close, {
-        stopApp({
-          dm <- read.csv(temp_file,
-                         header = TRUE,
-                         stringsAsFactors = FALSE)})
-          unlink(temp_file)
-          return(dm)
-      })
-      
-    },
-    
-    # CREATE TEMP FILE
-    onStart <- function(){
-      temp_file <<- tempfile(fileext = ".csv")
-    }
-  )
 
   # RUN DATA EDITOR - INTERACTIVE MODE ONLY
-  if(getOption("CytoExploreR_interactive")){
-    if (viewer == TRUE) {
-      x <- runApp(app,
-                  launch.browser = paneViewer(),
-                  quiet = TRUE)
-    } else {
-      x <- runApp(app,
-                  quiet = TRUE)
-    }
-  }
 
   # EDITOR DATA
-  if(type == "editor"){
     # UPDATE COLUMN NAMES
     colnames(x) <- x[1, ]
     # REMOVE COLNAMES FROM MATRIX
@@ -213,16 +91,7 @@ data_editor <- function(x,
     })
     # ADD BACK ROW NAMES
     rownames(x) <- row_names
-  # SELECTOR DATA
-  }else if(type == "selector"){
-    # CONVERT EMPTY CHARACTERS TO NA
-    lapply(seq_len(ncol(x)), function(z){
-      if(any(LAPPLY(x[, z], ".empty"))){
-        x[,z][which(LAPPLY(x[, z], ".empty"))] <<- NA
-      }
-    })
-  }
-  
+
   # WRITE TO FILE
   if(!is.null(save_as)){
     write.csv(x,
